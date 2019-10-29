@@ -7,6 +7,8 @@ import 'package:trackapp/models/userModel.dart';
 import 'package:trackapp/pages/dashboard.dart';
 import 'package:trackapp/pages/login_page.dart';
 import 'package:trackapp/utils/validator.dart';
+import 'package:intl/intl.dart';
+import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 
 final firestore = Firestore.instance;
 final usersRef = firestore.collection('users');
@@ -18,12 +20,29 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _firstName = new TextEditingController();
+  final TextEditingController _lastName = new TextEditingController();
   final TextEditingController _phone = new TextEditingController();
   final TextEditingController _email = new TextEditingController();
   final TextEditingController _password = new TextEditingController();
+  final TextEditingController _passwordConfirmation = new TextEditingController();
 
   bool check = true;
   bool _autoValidate = false;
+  DateTime selectedDate = DateTime.now();
+  final format = DateFormat("yyyy-MM-dd");
+
+  Future<Null> _selectDate(BuildContext context) async {
+    final DateTime picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
+    if (picked != null && picked != selectedDate)
+      setState(() {
+        selectedDate = picked;
+      });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +62,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ), // icon is 48px widget.
         ), // icon is 48px widget.
 
-        hintText: 'User Name',
+        hintText: 'First Name',
+        contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+      ),
+    );
+    final lastName = TextFormField(
+      autofocus: false,
+      textCapitalization: TextCapitalization.words,
+      controller: _lastName,
+      validator: Validator.validateName,
+      decoration: InputDecoration(
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 5.0),
+          child: Icon(
+            Icons.person,
+          ), // icon is 48px widget.
+        ), // icon is 48px widget.
+
+        hintText: 'Last Name',
         contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
       ),
@@ -103,8 +140,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
               check = !check;
             });
           },
-        ), // icon is 48px widget.
+        ),
+        // icon is 48px widget.
         hintText: 'Password',
+        contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+      ),
+    );
+    final passwordConfirmation = TextFormField(
+      autofocus: false,
+      obscureText: check,
+      controller: _passwordConfirmation,
+      validator: Validator.validatePassword,
+      decoration: InputDecoration(
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 5.0),
+          child: Icon(
+            Icons.lock,
+          ), // icon is 48px widget.
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(Icons.remove_red_eye),
+          color: check ? Colors.grey : Colors.blue,
+          onPressed: () {
+            setState(() {
+              check = !check;
+            });
+          },
+        ),
+        // icon is 48px widget.
+        hintText: 'Confirm Password',
         contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
       ),
@@ -200,13 +265,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   SizedBox(height: 48.0),
-                  firstName,
+                  Row(
+                    children: <Widget>[
+                      Expanded(flex: 1, child: firstName),
+                      SizedBox(width: 8.0,),
+                      Expanded(flex: 1, child: lastName)
+                    ],
+                  ),
                   SizedBox(height: 24.0),
                   phoneNumber,
+                  SizedBox(height: 24.0),
+                  DateTimeField(
+                    format: format,
+                    decoration: InputDecoration(
+                      prefixIcon: Padding(
+                        padding: EdgeInsets.only(left: 5.0),
+                        child: Icon(
+                          Icons.email,
+                        ), // icon is 48px widget.
+                      ), // icon is 48px widget.
+                      hintText: 'Date Of Birth',
+                      contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+                    ),
+                    onShowPicker: (context, currentValue) {
+                      return showDatePicker(
+                          context: context,
+                          firstDate: DateTime(1900),
+                          initialDate: currentValue ?? DateTime.now(),
+                          lastDate: DateTime(2100));
+                    },
+                  ),
                   SizedBox(height: 24.0),
                   email,
                   SizedBox(height: 24.0),
                   password,
+                  SizedBox(height: 24.0),
+                  passwordConfirmation,
                   SizedBox(height: 12.0),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(50, 20, 50, 10),

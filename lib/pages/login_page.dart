@@ -19,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _email = new TextEditingController();
   final TextEditingController _password = new TextEditingController();
   bool check = true;
+
   @override
   Widget build(BuildContext context) {
     size = MediaQuery.of(context).size;
@@ -107,7 +108,8 @@ class _LoginPageState extends State<LoginPage> {
     final signUpLabel = FlatButton(
       child: Text(
         'Create an Account',
-        style: TextStyle(color: Colors.black54),
+        style: TextStyle(
+            color: Colors.green.shade800, decoration: TextDecoration.underline),
       ),
       highlightColor: Colors.transparent,
       shape: RoundedRectangleBorder(
@@ -144,6 +146,12 @@ class _LoginPageState extends State<LoginPage> {
               padding: const EdgeInsets.only(top: 8.0),
               child: forgotLabel,
             ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text("-\tor\t-",style: TextStyle(color: Colors.black54,fontWeight: FontWeight.w500),),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.only(bottom: 20.0),
               child: signUpLabel,
@@ -155,6 +163,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
   void showPhoneDialog(FirebaseUser user, BuildContext cont) {
     showDialog(
         context: context,
