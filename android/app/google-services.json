@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "55430513887",
+    "firebase_url": "https://track-application-f4e7b.firebaseio.com",
+    "project_id": "track-application-f4e7b",
+    "storage_bucket": "track-application-f4e7b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:55430513887:android:3b1aed95edb7f93db0d56a",
+        "android_client_info": {
+          "package_name": "com.example.trackapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "55430513887-g3tjripsr5l52aq37l3hvqkveiuj3643.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.trackapp",
+            "certificate_hash": "a79de715d1f8f1a222a693bbf8b45a636e43cc9f"
+          }
+        },
+        {
+          "client_id": "55430513887-qqoqsqa1bk7ij2mq4r20johrt9lg6r6p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_7CA2ojdfxopWCmw9nlLo4Ny1yPwmzkY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "55430513887-qqoqsqa1bk7ij2mq4r20johrt9lg6r6p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

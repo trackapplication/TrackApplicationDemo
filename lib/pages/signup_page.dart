@@ -1,0 +1,224 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flushbar/flushbar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:trackapp/models/emailSignUp.dart';
+import 'package:trackapp/models/userModel.dart';
+import 'package:trackapp/pages/dashboard.dart';
+import 'package:trackapp/pages/login_page.dart';
+import 'package:trackapp/utils/validator.dart';
+
+final firestore = Firestore.instance;
+final usersRef = firestore.collection('users');
+
+class SignUpScreen extends StatefulWidget {
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _firstName = new TextEditingController();
+  final TextEditingController _phone = new TextEditingController();
+  final TextEditingController _email = new TextEditingController();
+  final TextEditingController _password = new TextEditingController();
+
+  bool check = true;
+  bool _autoValidate = false;
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Widget build(BuildContext context) {
+    final firstName = TextFormField(
+      autofocus: false,
+      textCapitalization: TextCapitalization.words,
+      controller: _firstName,
+      validator: Validator.validateName,
+      decoration: InputDecoration(
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 5.0),
+          child: Icon(
+            Icons.person,
+          ), // icon is 48px widget.
+        ), // icon is 48px widget.
+
+        hintText: 'User Name',
+        contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+      ),
+    );
+    final phoneNumber = TextFormField(
+      autofocus: false,
+      keyboardType: TextInputType.phone,
+      controller: _phone,
+      validator: Validator.validateNumber,
+      decoration: InputDecoration(
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 5.0),
+          child: Icon(
+            Icons.phone,
+          ), // icon is 48px widget.
+        ), // icon is 48px widget.
+        hintText: 'Phone Number',
+        contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+      ),
+    );
+    final email = TextFormField(
+      keyboardType: TextInputType.emailAddress,
+      autofocus: false,
+      controller: _email,
+      validator: Validator.validateEmail,
+      decoration: InputDecoration(
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 5.0),
+          child: Icon(
+            Icons.email,
+          ), // icon is 48px widget.
+        ), // icon is 48px widget.
+        hintText: 'Email',
+        contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+      ),
+    );
+
+    final password = TextFormField(
+      autofocus: false,
+      obscureText: check,
+      controller: _password,
+      validator: Validator.validatePassword,
+      decoration: InputDecoration(
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 5.0),
+          child: Icon(
+            Icons.lock,
+          ), // icon is 48px widget.
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(Icons.remove_red_eye),
+          color: check ? Colors.grey : Colors.blue,
+          onPressed: () {
+            setState(() {
+              check = !check;
+            });
+          },
+        ), // icon is 48px widget.
+        hintText: 'Password',
+        contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+      ),
+    );
+
+    final signUpButton = RaisedButton(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+      onPressed: () async {
+        if (_formKey.currentState.validate()) {
+          try {
+            await signUpWithEmailAndPassword(_email.text, _password.text)
+                .then((user) async {
+              User().setDetails(
+                  _email.text, _firstName.text, _phone.text, user.uid);
+              await addToUsers();
+            });
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Dashboard()),
+            );
+          } on PlatformException catch (e) {
+            Flushbar(
+              duration: Duration(seconds: 5),
+              title: "Error Signing you Up",
+              icon: Icon(
+                Icons.error,
+                color: Colors.blue,
+              ),
+              message: e.message.toString(),
+            )..show(context);
+          } catch (e) {
+            print(e.toString());
+            Flushbar(
+              duration: Duration(seconds: 5),
+              title: "Error Signing you Up",
+              icon: Icon(
+                Icons.error,
+                color: Colors.blue,
+              ),
+              message: "Please try again or Check your internet connection",
+            )..show(context);
+          }
+        } else {
+          Flushbar(
+            duration: Duration(seconds: 5),
+            title: "Error",
+            icon: Icon(
+              Icons.error,
+              color: Colors.blue,
+            ),
+            message: "Error Signing you Up",
+          )..show(context);
+        }
+      },
+      padding: EdgeInsets.symmetric(horizontal: 90, vertical: 15),
+      color: Colors.green.shade800,
+      child: Text('SIGN UP',
+          style: TextStyle(
+              color: Colors.white, fontSize: 16, fontFamily: "Product Sans")),
+    );
+
+    final signInLabel = FlatButton(
+      child: Text(
+        'Have an Account? Sign In.',
+        style: TextStyle(color: Colors.black54),
+      ),
+      highlightColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      onPressed: () {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => LoginPage()));
+      },
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Form(
+        key: _formKey,
+        autovalidate: _autoValidate,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  SizedBox(height: 48.0),
+                  firstName,
+                  SizedBox(height: 24.0),
+                  phoneNumber,
+                  SizedBox(height: 24.0),
+                  email,
+                  SizedBox(height: 24.0),
+                  password,
+                  SizedBox(height: 12.0),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(50, 20, 50, 10),
+                    child: signUpButton,
+                  ),
+                  signInLabel
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
