@@ -8,7 +8,6 @@ import 'package:trackapp/pages/signup_page.dart';
 import 'package:trackapp/utils/validator.dart';
 
 Size size = Size(0, 0);
-TextEditingController phone = new TextEditingController();
 
 class LoginPage extends StatefulWidget {
   @override
@@ -63,17 +62,17 @@ class _LoginPageState extends State<LoginPage> {
       ),
       onPressed: () async {
         try {
+          showProgressBar();
           await signInWithEmailAndPassword(_email.text, _password.text);
           final user = await FirebaseAuth.instance.currentUser();
-          final docs = await usersRef
-              .where("userID", isEqualTo: user.uid)
-              .getDocuments();
-          User().fromJson(docs.documents[0].data);
+          final docs = await usersRef.document(user.uid).get();
+          User().fromJson(docs.data);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => Dashboard()),
           );
         } catch (e) {
+          Navigator.of(context).pop();
           Flushbar(
             duration: Duration(seconds: 5),
             title: "Error Signing In",
@@ -149,7 +148,11 @@ class _LoginPageState extends State<LoginPage> {
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: Text("-\tor\t-",style: TextStyle(color: Colors.black54,fontWeight: FontWeight.w500),),
+                child: Text(
+                  "-\tor\t-",
+                  style: TextStyle(
+                      color: Colors.black54, fontWeight: FontWeight.w500),
+                ),
               ),
             ),
             Padding(
@@ -162,57 +165,26 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-
-  void showPhoneDialog(FirebaseUser user, BuildContext cont) {
+  void showProgressBar() {
     showDialog(
+        barrierDismissible: false,
         context: context,
-        builder: (BuildContext context) {
+        builder: (context) {
           return AlertDialog(
-            title: Text('Enter Phone Number'),
-            content: Form(
-              autovalidate: false,
-              key: formKey,
-              child: TextFormField(
-                autofocus: false,
-                keyboardType: TextInputType.phone,
-                controller: phone,
-                validator: Validator.validateNumber,
-                decoration: InputDecoration(
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.only(left: 5.0),
-                    child: Icon(
-                      Icons.phone,
-                    ), // icon is 48px widget.
-                  ), // icon is 48px widget.
-                  hintText: 'Phone Number',
-                  contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(32.0)),
-                ),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8.0))),
+            //backgroundColor: Colors.deepOrange.withOpacity(10),
+            title: Container(
+              child: Center(
+                child: CircularProgressIndicator(
+                    //backgroundColor: Colors.white,
+                    ),
               ),
             ),
-            actions: <Widget>[
-              FlatButton(
-                child: Text('Submit'),
-                onPressed: () async {
-                  if (formKey.currentState.validate()) {
-                    Navigator.of(context).pop();
-                    User().setDetails(
-                        user.email, user.displayName, phone.text, user.uid);
-                    try {
-                      await addToUsers();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (cont) => Dashboard()),
-                      );
-                    } catch (e) {
-                      print(e.toString());
-                    }
-                  }
-                },
-              )
-            ],
+            content: Text(
+              'Signing in Please Wait',
+              textAlign: TextAlign.center,
+            ),
           );
         });
   }

@@ -24,8 +24,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _phone = new TextEditingController();
   final TextEditingController _email = new TextEditingController();
   final TextEditingController _password = new TextEditingController();
-  final TextEditingController _passwordConfirmation = new TextEditingController();
-
+  final TextEditingController _passwordConfirmation =
+      new TextEditingController();
+  String dob = "";
   bool check = true;
   bool _autoValidate = false;
   DateTime selectedDate = DateTime.now();
@@ -180,12 +181,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         borderRadius: BorderRadius.circular(30),
       ),
       onPressed: () async {
-        if (_formKey.currentState.validate()) {
+        if (_formKey.currentState.validate() &&
+            _password.text == _passwordConfirmation.text) {
           try {
+            showProgressBar();
             await signUpWithEmailAndPassword(_email.text, _password.text)
                 .then((user) async {
-              User().setDetails(
-                  _email.text, _firstName.text, _phone.text, user.uid);
+              User().setDetails(_email.text, _firstName.text, _lastName.text,
+                  _phone.text, dob, user.uid);
               await addToUsers();
             });
 
@@ -194,6 +197,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               MaterialPageRoute(builder: (context) => Dashboard()),
             );
           } on PlatformException catch (e) {
+            Navigator.of(context).pop();
             Flushbar(
               duration: Duration(seconds: 5),
               title: "Error Signing you Up",
@@ -204,6 +208,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               message: e.message.toString(),
             )..show(context);
           } catch (e) {
+            Navigator.of(context).pop();
             print(e.toString());
             Flushbar(
               duration: Duration(seconds: 5),
@@ -268,7 +273,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Row(
                     children: <Widget>[
                       Expanded(flex: 1, child: firstName),
-                      SizedBox(width: 8.0,),
+                      SizedBox(
+                        width: 8.0,
+                      ),
                       Expanded(flex: 1, child: lastName)
                     ],
                   ),
@@ -281,19 +288,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       prefixIcon: Padding(
                         padding: EdgeInsets.only(left: 5.0),
                         child: Icon(
-                          Icons.email,
+                          Icons.calendar_today,
                         ), // icon is 48px widget.
                       ), // icon is 48px widget.
                       hintText: 'Date Of Birth',
-                      contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+                      contentPadding:
+                          EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(32.0)),
                     ),
-                    onShowPicker: (context, currentValue) {
-                      return showDatePicker(
+                    onShowPicker: (context, currentValue) async {
+                      final DateTime dateTime = await showDatePicker(
                           context: context,
                           firstDate: DateTime(1900),
                           initialDate: currentValue ?? DateTime.now(),
                           lastDate: DateTime(2100));
+
+                      dob = dateTime.toString().split(" ")[0];
+
+                      return dateTime;
                     },
                   ),
                   SizedBox(height: 24.0),
@@ -315,5 +328,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
     );
+  }
+
+  void showProgressBar() {
+    showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8.0))),
+            //backgroundColor: Colors.deepOrange.withOpacity(10),
+            title: Container(
+              child: Center(
+                child: CircularProgressIndicator(
+                    //backgroundColor: Colors.white,
+                    ),
+              ),
+            ),
+            content: Text(
+              'Signing you up',
+              textAlign: TextAlign.center,
+            ),
+          );
+        });
   }
 }

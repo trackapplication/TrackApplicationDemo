@@ -6,14 +6,19 @@ class User {
   static final User _singleton = User._internal();
 
   factory User() => _singleton;
-  String name;
+  String firstName;
+  String lastName;
   String email;
   String phone;
+  String dob;
   String uid;
+
   toJson() {
     return {
-      "name": this.name,
+      "firstName": this.firstName,
+      "lastName": this.lastName,
       "phone": this.phone,
+      "dob": this.dob,
       "email": this.email,
       "userID": this.uid,
     };
@@ -21,19 +26,24 @@ class User {
 
   fromJson(Map<String, dynamic> json) {
     this.email = json["email"];
-    this.name = json["name"];
+    this.firstName = json["firstName"];
+    this.lastName = json["lastName"];
+    this.dob = json["dob"];
     this.phone = json["phone"];
     this.uid = json["userID"];
   }
 
-  setDetails(String email, String name, String phone, String uid) {
+  setDetails(String email, String firstName, String lastName, String phone,
+      String dob, String uid) {
     this.email = email;
     this.phone = phone;
-    this.name = name;
+    this.dob = dob;
+    this.firstName = firstName;
+    this.lastName = lastName;
     this.uid = uid;
   }
 }
 
-Future addToUsers() {
-  usersRef.document(User().uid).setData(User().toJson());
+Future addToUsers() async {
+  await usersRef.document(User().uid).setData(User().toJson());
 }
