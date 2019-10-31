@@ -2,16 +2,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:trackapp/models/emailSignUp.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:trackapp/blocs/authBloc/bloc.dart';
+
 import 'package:trackapp/models/userModel.dart';
 import 'package:trackapp/pages/dashboard.dart';
 import 'package:trackapp/pages/login_page.dart';
+import 'package:trackapp/services/emailSignUp.dart';
 import 'package:trackapp/utils/validator.dart';
 import 'package:intl/intl.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 
 final firestore = Firestore.instance;
 final usersRef = firestore.collection('users');
+
+class SignUpProvider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      builder: (context) => AuthBloc(),
+      child: SignUpScreen(),
+    );
+  }
+}
 
 class SignUpScreen extends StatefulWidget {
   _SignUpScreenState createState() => _SignUpScreenState();
@@ -49,7 +62,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.initState();
   }
 
-  Widget build(BuildContext context) {
+  Widget build(BuildContext theContext) {
     final firstName = TextFormField(
       autofocus: false,
       textCapitalization: TextCapitalization.words,
@@ -256,76 +269,176 @@ class _SignUpScreenState extends State<SignUpScreen> {
       },
     );
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Form(
-        key: _formKey,
-        autovalidate: _autoValidate,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  SizedBox(height: 48.0),
-                  Row(
-                    children: <Widget>[
-                      Expanded(flex: 1, child: firstName),
-                      SizedBox(
-                        width: 8.0,
+    return BlocListener(
+      bloc: BlocProvider.of<AuthBloc>(context),
+      listener: (BuildContext context, AuthState state) {
+        if (state is Approved) {
+          print('Login Successful');
+        }
+      },
+      child: BlocBuilder(
+        bloc: BlocProvider.of<AuthBloc>(context),
+        builder: (context, AuthState s) {
+          if (s is Approved) {
+            return Dashboard();
+          } else {
+            return Scaffold(
+              backgroundColor: Colors.white,
+              body: Form(
+                key: _formKey,
+                autovalidate: _autoValidate,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          SizedBox(height: 48.0),
+                          Row(
+                            children: <Widget>[
+                              Expanded(flex: 1, child: firstName),
+                              SizedBox(
+                                width: 8.0,
+                              ),
+                              Expanded(flex: 1, child: lastName)
+                            ],
+                          ),
+                          SizedBox(height: 24.0),
+                          phoneNumber,
+                          SizedBox(height: 24.0),
+                          DateTimeField(
+                            format: format,
+                            decoration: InputDecoration(
+                              prefixIcon: Padding(
+                                padding: EdgeInsets.only(left: 5.0),
+                                child: Icon(
+                                  Icons.calendar_today,
+                                ), // icon is 48px widget.
+                              ), // icon is 48px widget.
+                              hintText: 'Date Of Birth',
+                              contentPadding:
+                                  EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(32.0)),
+                            ),
+                            onShowPicker: (context, currentValue) async {
+                              final DateTime dateTime = await showDatePicker(
+                                  context: context,
+                                  firstDate: DateTime(1900),
+                                  initialDate: currentValue ?? DateTime.now(),
+                                  lastDate: DateTime(2100));
+
+                              dob = dateTime.toString().split(" ")[0];
+
+                              return dateTime;
+                            },
+                          ),
+                          SizedBox(height: 24.0),
+                          email,
+                          SizedBox(height: 24.0),
+                          password,
+                          SizedBox(height: 24.0),
+                          passwordConfirmation,
+                          SizedBox(height: 12.0),
+                          BlocBuilder(
+                            bloc: BlocProvider.of<AuthBloc>(context),
+                            builder: (context, AuthState state) {
+                              print("State is : " + state.toString());
+                              final signupbloc =
+                                  BlocProvider.of<AuthBloc>(context);
+                              signupbloc.add(DetailsCheckEvent(
+                                  dob: dob,
+                                  email: _email.text,
+                                  password: _password.text,
+                                  passwordConfirm: _passwordConfirmation.text,
+                                  firstname: _firstName.text,
+                                  lastname: _lastName.text,
+                                  phone: _phone.text));
+                              if (state is SignUpError) {
+                                Flushbar(
+                                  duration: Duration(seconds: 5),
+                                  title: "Error Signing you Up",
+                                  icon: Icon(
+                                    Icons.error,
+                                    color: Colors.blue,
+                                  ),
+                                  message:
+                                      "Please try again or Check your internet connection",
+                                )..show(theContext);
+                                return Container();
+                              } else if (state is SignUpComplete) {
+                                return Dashboard();
+                              } else {
+                                if (state is InitialAuthState) {
+                                  return Container();
+                                } else if (state is FieldsAreEmpty) {
+                                  return Container();
+                                } else {
+                                  return Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        50, 20, 50, 10),
+                                    child: RaisedButton(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      onPressed: () {
+                                        if (_formKey.currentState.validate() &&
+                                            _password.text ==
+                                                _passwordConfirmation.text) {
+                                          final signupbloc =
+                                              BlocProvider.of<AuthBloc>(
+                                                  context);
+                                          signupbloc.add(SignUpEvent(
+                                              _email.text,
+                                              _password.text,
+                                              _firstName.text,
+                                              _lastName.text,
+                                              dob,
+                                              _phone.text));
+                                        } else {
+                                          Flushbar(
+                                            duration: Duration(seconds: 5),
+                                            title: "Error",
+                                            icon: Icon(
+                                              Icons.error,
+                                              color: Colors.blue,
+                                            ),
+                                            message: "Error Signing you Up",
+                                          )..show(theContext);
+                                        }
+                                      },
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 90, vertical: 15),
+                                      color: Colors.green.shade800,
+                                      child: (state is Checking)
+                                          ? Center(
+                                              child: CircularProgressIndicator(
+                                                backgroundColor: Colors.white,
+                                              ),
+                                            )
+                                          : Text('SIGN UP',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontFamily: "Product Sans")),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                          signInLabel
+                        ],
                       ),
-                      Expanded(flex: 1, child: lastName)
-                    ],
-                  ),
-                  SizedBox(height: 24.0),
-                  phoneNumber,
-                  SizedBox(height: 24.0),
-                  DateTimeField(
-                    format: format,
-                    decoration: InputDecoration(
-                      prefixIcon: Padding(
-                        padding: EdgeInsets.only(left: 5.0),
-                        child: Icon(
-                          Icons.calendar_today,
-                        ), // icon is 48px widget.
-                      ), // icon is 48px widget.
-                      hintText: 'Date Of Birth',
-                      contentPadding:
-                          EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(32.0)),
                     ),
-                    onShowPicker: (context, currentValue) async {
-                      final DateTime dateTime = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime(1900),
-                          initialDate: currentValue ?? DateTime.now(),
-                          lastDate: DateTime(2100));
-
-                      dob = dateTime.toString().split(" ")[0];
-
-                      return dateTime;
-                    },
                   ),
-                  SizedBox(height: 24.0),
-                  email,
-                  SizedBox(height: 24.0),
-                  password,
-                  SizedBox(height: 24.0),
-                  passwordConfirmation,
-                  SizedBox(height: 12.0),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(50, 20, 50, 10),
-                    child: signUpButton,
-                  ),
-                  signInLabel
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
+            );
+          }
+        },
       ),
     );
   }

@@ -1,13 +1,32 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
-import 'package:trackapp/models/emailSignUp.dart';
+import 'package:toast/toast.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:trackapp/blocs/authBloc/auth_bloc.dart';
+import 'package:trackapp/blocs/authBloc/bloc.dart';
+
 import 'package:trackapp/models/userModel.dart';
 import 'package:trackapp/pages/dashboard.dart';
 import 'package:trackapp/pages/signup_page.dart';
-import 'package:trackapp/utils/validator.dart';
+import 'package:trackapp/services/emailSignUp.dart';
 
 Size size = Size(0, 0);
+
+class LoginProvider extends StatefulWidget {
+  @override
+  _LoginProviderState createState() => _LoginProviderState();
+}
+
+class _LoginProviderState extends State<LoginProvider> {
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      builder: (context) => AuthBloc(),
+      child: LoginPage(),
+    );
+  }
+}
 
 class LoginPage extends StatefulWidget {
   @override
@@ -20,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   bool check = true;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext theContext) {
     size = MediaQuery.of(context).size;
 
     final email = TextField(
@@ -118,49 +137,117 @@ class _LoginPageState extends State<LoginPage> {
       materialTapTargetSize: MaterialTapTargetSize.padded,
       onPressed: () {
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => SignUpScreen()));
+            context, MaterialPageRoute(builder: (context) => SignUpProvider()));
       },
     );
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: ListView(
-          shrinkWrap: true,
-          padding: EdgeInsets.only(left: 24.0, right: 24.0),
-          children: <Widget>[
-            SizedBox(height: 48.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: email,
-            ),
-            password,
-            SizedBox(height: 24.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                loginButton,
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: forgotLabel,
-            ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  "-\tor\t-",
-                  style: TextStyle(
-                      color: Colors.black54, fontWeight: FontWeight.w500),
+    return BlocListener(
+      bloc: BlocProvider.of<AuthBloc>(context),
+      listener: (BuildContext context, AuthState state) {
+        if (state is Approved) {
+          print('Login Successful');
+        }
+      },
+      child: BlocBuilder(
+        bloc: BlocProvider.of<AuthBloc>(context),
+        builder: (context, AuthState s) {
+          print(s);
+          if (s is Approved) {
+            return Dashboard();
+          } else {
+            if (s is SignInError) {
+              print('hello');
+            }
+            return Scaffold(
+              backgroundColor: Colors.white,
+              body: Center(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.only(left: 24.0, right: 24.0),
+                  children: <Widget>[
+                    SizedBox(height: 48.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: email,
+                    ),
+                    password,
+                    SizedBox(height: 24.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        RaisedButton(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            onPressed: () {
+                              final loginbloc =
+                                  BlocProvider.of<AuthBloc>(context);
+                              loginbloc
+                                  .add(LoginEvent(_email.text, _password.text));
+                            },
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 90, vertical: 15),
+                            color: Colors.green.shade800,
+                            child: BlocBuilder(
+                              bloc: BlocProvider.of<AuthBloc>(context),
+                              builder: (context, AuthState state) {
+                                if (state is Checking) {
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      backgroundColor: Colors.white,
+                                    ),
+                                  );
+                                } else if (state is SignInError) {
+                                  // Flushbar(
+                                  //   duration: Duration(seconds: 5),
+                                  //   title: "Error Signing In",
+                                  //   icon: Icon(
+                                  //     Icons.error,
+                                  //     color: Colors.blue,
+                                  //   ),
+                                  //   message: "Invalid Email or Password",
+                                  // )..show(theContext);
+                                  Flushbar().show(theContext);
+                                  return Text('Log In',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontFamily: "Product Sans"));
+                                } else {
+                                  return Text('Log In',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontFamily: "Product Sans"));
+                                }
+                              },
+                            )),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: forgotLabel,
+                    ),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          "-\tor\t-",
+                          style: TextStyle(
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20.0),
+                      child: signUpLabel,
+                    ),
+                  ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
-              child: signUpLabel,
-            ),
-          ],
-        ),
+            );
+          }
+        },
       ),
     );
   }
