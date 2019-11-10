@@ -91,16 +91,16 @@ class _LoginPageState extends State<LoginPage> {
             MaterialPageRoute(builder: (context) => Dashboard()),
           );
         } catch (e) {
-          Navigator.of(context).pop();
-          Flushbar(
-            duration: Duration(seconds: 5),
-            title: "Error Signing In",
-            icon: Icon(
-              Icons.error,
-              color: Colors.blue,
-            ),
-            message: "Invalid Email or Password",
-          )..show(context);
+          //Navigator.of(context).pop();
+          // Flushbar(
+          //   duration: Duration(seconds: 5),
+          //   title: "Error Signing In",
+          //   icon: Icon(
+          //     Icons.error,
+          //     color: Colors.blue,
+          //   ),
+          //   message: "Invalid Email or Password",
+          // )..show(context);
         }
       },
       padding: EdgeInsets.symmetric(horizontal: 90, vertical: 15),
