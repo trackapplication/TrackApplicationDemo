@@ -31,6 +31,5 @@ Future signInWithEmailAndPassword(String email, String password) async {
 
 Future signOut() async {
   FirebaseAuth.instance.signOut();
-
   print("User Sign Out");
 }

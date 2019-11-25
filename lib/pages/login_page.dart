@@ -1,17 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
-import 'package:toast/toast.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_facebook_login/flutter_facebook_login.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:trackapp/blocs/authBloc/auth_bloc.dart';
 import 'package:trackapp/blocs/authBloc/bloc.dart';
-
 import 'package:trackapp/models/userModel.dart';
 import 'package:trackapp/pages/dashboard.dart';
+import 'package:trackapp/pages/forgot_pass.dart';
 import 'package:trackapp/pages/signup_page.dart';
 import 'package:trackapp/services/emailSignUp.dart';
+import 'package:trackapp/models/userModel.dart';
+import 'package:trackapp/services/fbAuth.dart';
+import 'package:trackapp/services/googleSignIn.dart';
 
 Size size = Size(0, 0);
+
+final GoogleSignIn googleSignIn = GoogleSignIn();
+final facebookLogin = FacebookLogin();
 
 class LoginProvider extends StatefulWidget {
   @override
@@ -20,12 +27,10 @@ class LoginProvider extends StatefulWidget {
 
 class _LoginProviderState extends State<LoginProvider> {
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      builder: (context) => AuthBloc(),
-      child: LoginPage(),
-    );
-  }
+  Widget build(BuildContext context) => BlocProvider(
+        builder: (context) => AuthBloc(),
+        child: LoginPage(),
+      );
 }
 
 class LoginPage extends StatefulWidget {
@@ -36,7 +41,14 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _email = new TextEditingController();
   final TextEditingController _password = new TextEditingController();
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final FacebookLogin fbLogin = new FacebookLogin();
+
   bool check = true;
+  bool isLoggedIn = false;
+
+  void onLoginStatusChanged(bool isLoggedIn) =>
+      setState(() => this.isLoggedIn = isLoggedIn);
 
   @override
   Widget build(BuildContext theContext) {
@@ -64,11 +76,7 @@ class _LoginPageState extends State<LoginPage> {
         suffixIcon: IconButton(
           icon: Icon(Icons.remove_red_eye),
           color: check ? Colors.grey : Colors.blue,
-          onPressed: () {
-            setState(() {
-              check = !check;
-            });
-          },
+          onPressed: () => setState(() => check = !check),
         ),
         contentPadding: EdgeInsets.all(18),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
@@ -84,6 +92,7 @@ class _LoginPageState extends State<LoginPage> {
           showProgressBar();
           await signInWithEmailAndPassword(_email.text, _password.text);
           final user = await FirebaseAuth.instance.currentUser();
+          //User person.uid = user.uid;
           final docs = await usersRef.document(user.uid).get();
           User().fromJson(docs.data);
           Navigator.pushReplacement(
@@ -121,7 +130,12 @@ class _LoginPageState extends State<LoginPage> {
       ),
       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      onPressed: () {},
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ForgotPass()),
+        );
+      },
     );
     final signUpLabel = FlatButton(
       child: Text(
@@ -140,11 +154,94 @@ class _LoginPageState extends State<LoginPage> {
             context, MaterialPageRoute(builder: (context) => SignUpProvider()));
       },
     );
+    var googleSignInButton = FloatingActionButton(
+      heroTag: 'google',
+      child: Text('G',
+          style: TextStyle(color: Colors.white, fontFamily: "Product Sans")),
+      backgroundColor: Colors.redAccent,
+      elevation: 0,
+      onPressed: () async {
+        final firebaseUser = await signInWithGoogle();
+        if (firebaseUser != null) {
+          final docs = await usersRef
+              .where("userID", isEqualTo: firebaseUser.uid)
+              .getDocuments();
+          if (docs.documents.length == 0) {
+            User().setDetails(
+                firebaseUser.email,
+                firebaseUser.displayName.split(" ")[0],
+                firebaseUser.displayName.split(" ")[1],
+                "9999999999",
+                "1999-11-21",
+                firebaseUser.uid);
+            await addToUsers();
+          } else {
+            User().fromJson(docs.documents[0].data);
+          }
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Dashboard()),
+          );
+        } else {
+          Flushbar(
+            duration: Duration(seconds: 3),
+            title: "Error",
+            message: "Feature coming soon",
+          ).show(theContext);
+        }
+      },
+    );
+    var facebookSignInButton = FloatingActionButton(
+        heroTag: 'facebook',
+        child: Text('f',
+            style: TextStyle(color: Colors.white, fontFamily: "Product Sans")),
+        backgroundColor: Colors.blue,
+        elevation: 0,
+        onPressed: () async {
+          final user = await signInWithFB();
+          if (user != null) {
+            final docs = await usersRef
+                .where("userID", isEqualTo: user.uid)
+                .getDocuments();
+            if (docs.documents.length == 0) {
+              User().setDetails(
+                  user.email,
+                  user.displayName.split(" ")[0],
+                  user.displayName.split(" ")[1],
+                  "9999999999",
+                  "1999-11-21",
+                  user.uid);
+              await addToUsers();
+            } else {
+              User().fromJson(docs.documents[0].data);
+            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Dashboard()),
+            );
+          } else {
+            Flushbar(
+              duration: Duration(seconds: 3),
+              title: "Error",
+              message: "Feature coming soon",
+            ).show(theContext);
+          }
+        });
+
     return BlocListener(
       bloc: BlocProvider.of<AuthBloc>(context),
       listener: (BuildContext context, AuthState state) {
-        if (state is Approved) {
-          print('Login Successful');
+        if (state is SignInError) {
+          print('Login Failed');
+          Flushbar(
+            duration: Duration(seconds: 5),
+            title: "Error Signing In",
+            icon: Icon(
+              Icons.error,
+              color: Colors.blue,
+            ),
+            message: "Invalid Email or Password",
+          )..show(theContext);
         }
       },
       child: BlocBuilder(
@@ -197,16 +294,6 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   );
                                 } else if (state is SignInError) {
-                                  // Flushbar(
-                                  //   duration: Duration(seconds: 5),
-                                  //   title: "Error Signing In",
-                                  //   icon: Icon(
-                                  //     Icons.error,
-                                  //     color: Colors.blue,
-                                  //   ),
-                                  //   message: "Invalid Email or Password",
-                                  // )..show(theContext);
-                                  Flushbar().show(theContext);
                                   return Text('Log In',
                                       style: TextStyle(
                                           color: Colors.white,
@@ -242,6 +329,13 @@ class _LoginPageState extends State<LoginPage> {
                       padding: const EdgeInsets.only(bottom: 20.0),
                       child: signUpLabel,
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: <Widget>[
+                        googleSignInButton,
+                        facebookSignInButton
+                      ],
+                    )
                   ],
                 ),
               ),
@@ -252,27 +346,21 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void showProgressBar() {
-    showDialog(
+  void showProgressBar() => showDialog(
         barrierDismissible: false,
         context: context,
-        builder: (context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8.0))),
-            //backgroundColor: Colors.deepOrange.withOpacity(10),
-            title: Container(
-              child: Center(
-                child: CircularProgressIndicator(
-                    //backgroundColor: Colors.white,
-                    ),
-              ),
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(8.0),
             ),
-            content: Text(
-              'Signing in Please Wait',
-              textAlign: TextAlign.center,
-            ),
-          );
-        });
-  }
+          ),
+          //backgroundColor: Colors.deepOrange.withOpacity(10),
+          title: Container(child: Center(child: CircularProgressIndicator())),
+          content: Text(
+            'Signing in Please Wait',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
 }

@@ -1,0 +1,17 @@
+{
+  "_id": "1ef2392f-98ce-4933-a7ec-b5d68bb2aef2",
+  "lastLog": {
+    "protocol": null,
+    "ipAddress": null,
+    "imei": null,
+    "lbsString": null,
+    "wifiString": null,
+    "timestamp": null,
+    "rawPayload": null
+  },
+  "online": null,
+  "deviceId": "027022310231",
+  "createdAt": "2019-11-14T04:35:47.835Z",
+  "updatedAt": "2019-11-14T04:35:47.835Z",
+  "name": "device2"
+}

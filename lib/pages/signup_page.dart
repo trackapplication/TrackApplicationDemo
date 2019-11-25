@@ -3,6 +3,7 @@ import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:trackapp/blocs/authBloc/auth_state.dart';
 import 'package:trackapp/blocs/authBloc/bloc.dart';
 
 import 'package:trackapp/models/userModel.dart';
@@ -103,7 +104,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       autofocus: false,
       keyboardType: TextInputType.phone,
       controller: _phone,
-      validator: Validator.validateNumber,
+      validator: validateMobile,
+      maxLengthEnforced: true,
+      maxLength: 10,
       decoration: InputDecoration(
         prefixIcon: Padding(
           padding: EdgeInsets.only(left: 5.0),
@@ -165,7 +168,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       autofocus: false,
       obscureText: check,
       controller: _passwordConfirmation,
-      validator: Validator.validatePassword,
+      validator: validatePassword,
       decoration: InputDecoration(
         prefixIcon: Padding(
           padding: EdgeInsets.only(left: 5.0),
@@ -189,69 +192,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
 
-    final signUpButton = RaisedButton(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
-      ),
-      onPressed: () async {
-        if (_formKey.currentState.validate() &&
-            _password.text == _passwordConfirmation.text) {
-          try {
-            showProgressBar();
-            await signUpWithEmailAndPassword(_email.text, _password.text)
-                .then((user) async {
-              User().setDetails(_email.text, _firstName.text, _lastName.text,
-                  _phone.text, dob, user.uid);
-              await addToUsers();
-            });
-
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => Dashboard()),
-            );
-          } on PlatformException catch (e) {
-            Navigator.of(context).pop();
-            Flushbar(
-              duration: Duration(seconds: 5),
-              title: "Error Signing you Up",
-              icon: Icon(
-                Icons.error,
-                color: Colors.blue,
-              ),
-              message: e.message.toString(),
-            )..show(context);
-          } catch (e) {
-            Navigator.of(context).pop();
-            print(e.toString());
-            Flushbar(
-              duration: Duration(seconds: 5),
-              title: "Error Signing you Up",
-              icon: Icon(
-                Icons.error,
-                color: Colors.blue,
-              ),
-              message: "Please try again or Check your internet connection",
-            )..show(context);
-          }
-        } else {
-          Flushbar(
-            duration: Duration(seconds: 5),
-            title: "Error",
-            icon: Icon(
-              Icons.error,
-              color: Colors.blue,
-            ),
-            message: "Error Signing you Up",
-          )..show(context);
-        }
-      },
-      padding: EdgeInsets.symmetric(horizontal: 90, vertical: 15),
-      color: Colors.green.shade800,
-      child: Text('SIGN UP',
-          style: TextStyle(
-              color: Colors.white, fontSize: 16, fontFamily: "Product Sans")),
-    );
-
     final signInLabel = FlatButton(
       child: Text(
         'Have an Account? Sign In.',
@@ -265,21 +205,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
       materialTapTargetSize: MaterialTapTargetSize.padded,
       onPressed: () {
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => LoginPage()));
+            context, MaterialPageRoute(builder: (context) => LoginProvider()));
       },
     );
 
     return BlocListener(
       bloc: BlocProvider.of<AuthBloc>(context),
       listener: (BuildContext context, AuthState state) {
-        if (state is Approved) {
-          print('Login Successful');
+        if (state is SignUpComplete) {
+          print('SignUp Successful');
         }
       },
       child: BlocBuilder(
         bloc: BlocProvider.of<AuthBloc>(context),
         builder: (context, AuthState s) {
-          if (s is Approved) {
+          if (s is SignUpComplete) {
             return Dashboard();
           } else {
             return Scaffold(
@@ -346,16 +286,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             bloc: BlocProvider.of<AuthBloc>(context),
                             builder: (context, AuthState state) {
                               print("State is : " + state.toString());
-                              final signupbloc =
-                                  BlocProvider.of<AuthBloc>(context);
-                              signupbloc.add(DetailsCheckEvent(
-                                  dob: dob,
-                                  email: _email.text,
-                                  password: _password.text,
-                                  passwordConfirm: _passwordConfirmation.text,
-                                  firstname: _firstName.text,
-                                  lastname: _lastName.text,
-                                  phone: _phone.text));
+
                               if (state is SignUpError) {
                                 Flushbar(
                                   duration: Duration(seconds: 5),
@@ -372,59 +303,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 return Dashboard();
                               } else {
                                 if (state is InitialAuthState) {
-                                  return Container();
-                                } else if (state is FieldsAreEmpty) {
-                                  return Container();
+                                  if (_email.text.isEmpty ||
+                                      _firstName.text.isEmpty ||
+                                      _lastName.text.isEmpty ||
+                                      dob.isEmpty ||
+                                      _password.text.isEmpty ||
+                                      _passwordConfirmation.text.isEmpty ||
+                                      _phone.text.isEmpty) {
+                                    return signUpButton(
+                                        state, theContext, false);
+                                  } else {
+                                    return signUpButton(
+                                        state, theContext, true);
+                                  }
                                 } else {
-                                  return Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        50, 20, 50, 10),
-                                    child: RaisedButton(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      onPressed: () {
-                                        if (_formKey.currentState.validate() &&
-                                            _password.text ==
-                                                _passwordConfirmation.text) {
-                                          final signupbloc =
-                                              BlocProvider.of<AuthBloc>(
-                                                  context);
-                                          signupbloc.add(SignUpEvent(
-                                              _email.text,
-                                              _password.text,
-                                              _firstName.text,
-                                              _lastName.text,
-                                              dob,
-                                              _phone.text));
-                                        } else {
-                                          Flushbar(
-                                            duration: Duration(seconds: 5),
-                                            title: "Error",
-                                            icon: Icon(
-                                              Icons.error,
-                                              color: Colors.blue,
-                                            ),
-                                            message: "Error Signing you Up",
-                                          )..show(theContext);
-                                        }
-                                      },
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 90, vertical: 15),
-                                      color: Colors.green.shade800,
-                                      child: (state is Checking)
-                                          ? Center(
-                                              child: CircularProgressIndicator(
-                                                backgroundColor: Colors.white,
-                                              ),
-                                            )
-                                          : Text('SIGN UP',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16,
-                                                  fontFamily: "Product Sans")),
-                                    ),
-                                  );
+                                  return signUpButton(state, theContext, true);
                                 }
                               }
                             },
@@ -441,6 +334,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
         },
       ),
     );
+  }
+
+  String validateMobile(String value) {
+    if (value.length != 10)
+      return 'Enter a valid mobile number';
+    else
+      return null;
+  }
+
+  String validatePassword(String value) {
+    if (value != _password.text) {
+      return 'Enter same password in both the fields';
+    }
+    else
+      return null;
   }
 
   void showProgressBar() {
@@ -465,5 +373,56 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
           );
         });
+  }
+
+  Widget signUpButton(
+      AuthState state, BuildContext theContext, bool isEnabled) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(50, 20, 50, 10),
+      child: RaisedButton(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        onPressed: isEnabled
+            ? () {
+                if (_formKey.currentState.validate() &&
+                    _password.text == _passwordConfirmation.text) {
+                  final signupbloc = BlocProvider.of<AuthBloc>(context);
+                  signupbloc.add(SignUpEvent(
+                    _email.text,
+                    _password.text,
+                    _firstName.text,
+                    _lastName.text,
+                    dob,
+                    _phone.text,
+                  ));
+                } else {
+                  Flushbar(
+                    duration: Duration(seconds: 5),
+                    title: "Error",
+                    icon: Icon(
+                      Icons.error,
+                      color: Colors.blue,
+                    ),
+                    message: "Error Signing you Up",
+                  )..show(theContext);
+                }
+              }
+            : null,
+        padding: EdgeInsets.symmetric(horizontal: 90, vertical: 15),
+        color: Colors.green.shade800,
+        child: (state is Checking)
+            ? Center(
+                child: CircularProgressIndicator(
+                  backgroundColor: Colors.white,
+                ),
+              )
+            : Text('SIGN UP',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontFamily: "Product Sans")),
+      ),
+    );
   }
 }

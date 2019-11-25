@@ -1,4 +1,6 @@
+import 'package:trackapp/models/deviceModel.dart';
 import 'package:trackapp/pages/signup_page.dart';
+import 'package:trackapp/services/getDevice.dart';
 
 class User {
   User._internal();
@@ -6,13 +8,15 @@ class User {
   static final User _singleton = User._internal();
 
   factory User() => _singleton;
+
   String firstName;
   String lastName;
   String email;
   String phone;
   String dob;
   String uid;
-
+  Device listOfDevices;
+  // TODO: Auto-serialize this
   toJson() {
     return {
       "firstName": this.firstName,
@@ -24,6 +28,7 @@ class User {
     };
   }
 
+  // TODO: Auto-deserialize this
   fromJson(Map<String, dynamic> json) {
     this.email = json["email"];
     this.firstName = json["firstName"];
@@ -33,8 +38,14 @@ class User {
     this.uid = json["userID"];
   }
 
-  setDetails(String email, String firstName, String lastName, String phone,
-      String dob, String uid) {
+  setDetails(
+    String email,
+    String firstName,
+    String lastName,
+    String phone,
+    String dob,
+    String uid,
+  ) {
     this.email = email;
     this.phone = phone;
     this.dob = dob;
