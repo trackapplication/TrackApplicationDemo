@@ -12,6 +12,10 @@ import 'package:trackapp/pages/devices_page.dart';
 import 'package:trackapp/pages/history_page.dart';
 import 'package:trackapp/pages/locate_page.dart';
 import 'package:trackapp/pages/safezone_page.dart';
+import 'package:trackapp/pages/attendance_page.dart';
+import 'package:trackapp/models/userModel.dart';
+
+import 'attendance_page.dart';
 
 Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
 
@@ -21,14 +25,14 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  int _index = 1;
+  int _index = 0;
   @override
   Widget build(BuildContext context) {
     List<Widget> pages = [
       DevicesPage(),
       LocatePage(),
       SafeZonePage(),
-      HistoryPage()
+      HistoryPage(),
     ];
 
     return WillPopScope(
@@ -39,6 +43,27 @@ class _DashboardState extends State<Dashboard> {
         return true;
       },
       child: Scaffold(
+          drawer: Drawer(
+            child: ListView(
+              children: <Widget>[
+                UserAccountsDrawerHeader(
+                  accountName:
+                      new Text(User().firstName + " " + User().lastName),
+                  accountEmail: new Text(User().email),
+                  currentAccountPicture: CircleAvatar(),
+                ),
+                ListTile(
+                    title: Text("Attendance"),
+                    leading: Icon(Icons.stars),
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AttendancePage()));
+                    })
+              ],
+            ),
+          ),
           bottomNavigationBar: BottomNavigationBar(
             onTap: (i) {
               setState(() {
@@ -60,7 +85,7 @@ class _DashboardState extends State<Dashboard> {
               BottomNavigationBarItem(
                   icon: Icon(Icons.security), title: Text("Safety Zone")),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.history), title: Text("History"))
+                  icon: Icon(Icons.history), title: Text("History")),
             ],
           ),
           body: pages[_index]),

@@ -377,52 +377,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget signUpButton(
       AuthState state, BuildContext theContext, bool isEnabled) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(50, 20, 50, 10),
-      child: RaisedButton(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        onPressed: isEnabled
-            ? () {
-                if (_formKey.currentState.validate() &&
-                    _password.text == _passwordConfirmation.text) {
-                  final signupbloc = BlocProvider.of<AuthBloc>(context);
-                  signupbloc.add(SignUpEvent(
-                    _email.text,
-                    _password.text,
-                    _firstName.text,
-                    _lastName.text,
-                    dob,
-                    _phone.text,
-                  ));
-                } else {
-                  Flushbar(
-                    duration: Duration(seconds: 5),
-                    title: "Error",
-                    icon: Icon(
-                      Icons.error,
-                      color: Colors.blue,
-                    ),
-                    message: "Error Signing you Up",
-                  )..show(theContext);
-                }
-              }
-            : null,
-        padding: EdgeInsets.symmetric(horizontal: 90, vertical: 15),
-        color: Colors.green.shade800,
-        child: (state is Checking)
-            ? Center(
-                child: CircularProgressIndicator(
-                  backgroundColor: Colors.white,
-                ),
-              )
-            : Text('SIGN UP',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: "Product Sans")),
+    return RaisedButton(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
       ),
+      onPressed: isEnabled
+          ? () {
+              if (_formKey.currentState.validate() &&
+                  _password.text == _passwordConfirmation.text) {
+                final signupbloc = BlocProvider.of<AuthBloc>(context);
+                signupbloc.add(SignUpEvent(
+                  _email.text,
+                  _password.text,
+                  _firstName.text,
+                  _lastName.text,
+                  dob,
+                  _phone.text,
+                ));
+              } else {
+                Flushbar(
+                  duration: Duration(seconds: 5),
+                  title: "Error",
+                  icon: Icon(
+                    Icons.error,
+                    color: Colors.blue,
+                  ),
+                  message: "Error Signing you Up",
+                )..show(theContext);
+              }
+            }
+          : null,
+      padding: EdgeInsets.symmetric(horizontal: 90, vertical: 15),
+      color: Colors.green.shade800,
+      child: (state is Checking)
+          ? Center(
+              child: CircularProgressIndicator(
+                backgroundColor: Colors.white,
+              ),
+            )
+          : Text('SIGN UP',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: "Product Sans")),
     );
   }
 }

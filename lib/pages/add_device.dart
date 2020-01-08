@@ -5,6 +5,7 @@ import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flushbar/flushbar.dart';
 
 final firestore = Firestore.instance;
 final usersRef = firestore.collection('users');
@@ -19,7 +20,7 @@ class _AddDeviceState extends State<AddDevice> {
   TextEditingController deviceNameCtrl = TextEditingController();
   TextEditingController genderCtrl = TextEditingController();
   TextEditingController dobCtrl = TextEditingController();
-  List<String> genders = ["Male", "Female", "Others"];
+  List<String> genders = ["Select Gender", "Male", "Female", "Others"];
   String selectedGender;
 
   String dob = "1999-12-21";
@@ -28,138 +29,147 @@ class _AddDeviceState extends State<AddDevice> {
 
   @override
   Widget build(BuildContext context) {
-    selectedGender = genders[0];
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0.0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  keyboardType: TextInputType.number,
-                  autofocus: false,
-                  controller: deviceIDCtrl,
-                  maxLengthEnforced: true,
-                  maxLength: 10,
-                  decoration: InputDecoration(
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.only(left: 5.0),
-                      child: Icon(
-                        Icons.devices_other,
-                      ), // icon is 48px widget.
-                    ), // icon is 48px widget.
-                    hintText: 'Device ID',
-                    contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(32.0)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Container(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.green,
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        }),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  keyboardType: TextInputType.text,
-                  autofocus: false,
-                  controller: deviceNameCtrl,
-                  decoration: InputDecoration(
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.only(left: 5.0),
-                      child: Icon(
-                        Icons.device_unknown,
-                      ), // icon is 48px widget.
-                    ), // icon is 48px widget.
-                    hintText: 'Device Name',
-                    contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(32.0)),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        "Add Device",
+                        style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                      //padding: EdgeInsets.all(9),
-                      //height: 70,
-                      width: MediaQuery.of(context).size.width,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              "Gender",
-                              textAlign: TextAlign.left,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              height: 80,
-                              child: DropdownButton(
-                                isExpanded: true,
-                                // icon: Icon(Icons.person_outline),
-                                items: genders.map((gender) {
-                                  return DropdownMenuItem(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        gender,
-                                        textAlign: TextAlign.center,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextFormField(
+                      keyboardType: TextInputType.number,
+                      autofocus: false,
+                      controller: deviceIDCtrl,
+                      decoration: InputDecoration(
+                        labelText: "Device ID",
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextFormField(
+                      keyboardType: TextInputType.text,
+                      autofocus: false,
+                      controller: deviceNameCtrl,
+                      decoration: InputDecoration(
+                          // icon is 48px widget.
+
+                          labelText: "Device Name"),
+                    ),
+                  ),
+                  Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                          //padding: EdgeInsets.all(9),
+                          //height: 70,
+                          width: MediaQuery.of(context).size.width,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Container(
+                                height: 60,
+                                child: DropdownButton(
+                                  isExpanded: true,
+                                  // icon: Icon(Icons.person_outline),
+                                  items: genders.map((gender) {
+                                    return DropdownMenuItem(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            top: 8.0, left: 8.0, right: 8.0),
+                                        child: Text(
+                                          gender,
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ),
-                                    ),
-                                    value: gender,
-                                  );
-                                }).toList(),
-                                value: selectedGender,
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedGender = value;
-                                  });
-                                },
-                                hint: Text("Gender"),
+                                      value: gender,
+                                    );
+                                  }).toList(),
+                                  value: selectedGender,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedGender = value;
+                                    });
+                                  },
+                                  hint: Text("Gender"),
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ))),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: DateTimeField(
-                  format: format,
-                  decoration: InputDecoration(
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.only(left: 5.0),
-                      child: Icon(
-                        Icons.calendar_today,
-                      ), // icon is 48px widget.
-                    ), // icon is 48px widget.
-                    hintText: 'Date Of Birth',
-                    contentPadding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(32.0)),
+                            ],
+                          ))),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: DateTimeField(
+                      format: format,
+                      decoration: InputDecoration(
+                        // icon is 48px widget.
+                        hintText: 'Date Of Birth',
+                      ),
+                      onShowPicker: (context, currentValue) async {
+                        final DateTime dateTime = await showDatePicker(
+                            context: context,
+                            firstDate: DateTime(1900),
+                            initialDate: currentValue ?? DateTime.now(),
+                            lastDate: DateTime(2100));
+
+                        dob = dateTime.toString().split(" ")[0];
+
+                        return dateTime;
+                      },
+                    ),
                   ),
-                  onShowPicker: (context, currentValue) async {
-                    final DateTime dateTime = await showDatePicker(
-                        context: context,
-                        firstDate: DateTime(1900),
-                        initialDate: currentValue ?? DateTime.now(),
-                        lastDate: DateTime(2100));
-
-                    dob = dateTime.toString().split(" ")[0];
-
-                    return dateTime;
-                  },
-                ),
+                  SizedBox(
+                    height: 30,
+                  ),
+                ],
               ),
-              SizedBox(
-                height: 30,
-              ),
-              RaisedButton(
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RaisedButton(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8.0))),
                 onPressed: () async {
+                  if (selectedGender == null) {
+                    selectedGender = "Select Gender";
+                  }
+                  print(dob);
+                  print(selectedGender);
+
+                  /*if (selectedGender == null) {
+                    return;
+                  }*/
                   int responseCode =
                       await addDevice(deviceIDCtrl.text, deviceNameCtrl.text);
                   print(responseCode);
@@ -175,72 +185,34 @@ class _AddDeviceState extends State<AddDevice> {
                       'Gender': selectedGender,
                       'Name': deviceNameCtrl.text
                     });
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                              actions: <Widget>[
-                                FlatButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text("Ok"))
-                              ],
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(12))),
-                              title: Text("Success"),
-                              //responseCode==1 ? Text("addddded"): responseCode==2 ? Text("sameee haiii"):Text("bad request"),
-                              content: Text("Device added successfully."));
-                        });
-                  } else if (responseCode == 2) {
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                              actions: <Widget>[
-                                FlatButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text("Ok"))
-                              ],
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(12))),
-                              title: Text("Error"),
-                              //responseCode==1 ? Text("addddded"): responseCode==2 ? Text("sameee haiii"):Text("bad request"),
-                              content:
-                                  Text("The device has already been added."));
-                        });
+                    Navigator.of(context).pop();
                   } else if (responseCode == 3) {
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                              actions: <Widget>[
-                                FlatButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text("Ok"))
-                              ],
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(12))),
-                              title: Text("Error"),
-                              //responseCode==1 ? Text("addddded"): responseCode==2 ? Text("sameee haiii"):Text("bad request"),
-                              content: Text(
-                                  "The device ID you entered is incorrent, please check."));
-                        });
+                    Flushbar(
+                      duration: Duration(seconds: 3),
+                      title: "Error",
+                      message: "Invalid Device ID",
+                    ).show(context);
+                  } else {
+                    Flushbar(
+                      duration: Duration(seconds: 3),
+                      title: "Error",
+                      message: "Device ID has already been added",
+                    ).show(context);
                   }
                 },
                 color: Colors.green,
                 textColor: Colors.white,
-                child: Text("Submit"),
-              )
-            ],
-          ),
+                child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: 55,
+                    child: Center(
+                        child: Text(
+                      "Submit Details",
+                      style: TextStyle(fontSize: 18),
+                    ))),
+              ),
+            )
+          ],
         ),
       ),
     );

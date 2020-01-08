@@ -15,8 +15,8 @@ Future<Device> fetchDevice() async {
   if (response.statusCode == 200 || response.statusCode == 201) {
     //print('response of add device data ==>  ${response.body.length}');
     Map responseData = jsonDecode(response.body);
-    print(response.body);
-    print(responseData.length);
+    // print(response.body);
+    // print(responseData.length);
     //print(GetDevices.fromJson(json.decode(response.body)));
     //print("hiiiiii" + responseData.to);
     //getErrorBasedOnStatusCode(response.statusCode, responseData['message']);
